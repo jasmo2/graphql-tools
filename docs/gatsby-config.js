@@ -1,12 +1,9 @@
-const themeOptions = require('gatsby-theme-apollo-docs/theme-options');
-
 module.exports = {
   pathPrefix: '/docs/graphql-tools',
-  plugins: [
+  __experimentalThemes: [
     {
       resolve: 'gatsby-theme-apollo-docs',
       options: {
-        ...themeOptions,
         root: __dirname,
         subtitle: 'GraphQL Tools',
         description: 'A guide to using GraphQL Tools',
