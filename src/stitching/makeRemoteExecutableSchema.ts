@@ -48,6 +48,10 @@ export type FetcherOperation = {
   variables?: { [key: string]: any };
   context?: { [key: string]: any };
 };
+type schemaParamsProps = {
+  typeDefs: DocumentNode | string;
+  resolvers: IResolvers<any, any>;
+};
 
 export default function makeRemoteExecutableSchema({
   schema,
@@ -57,13 +61,42 @@ export default function makeRemoteExecutableSchema({
   buildSchemaOptions,
   printSchemaOptions = { commentDescriptions: true }
 }: {
-  schema: GraphQLSchema | string;
-  link?: ApolloLink;
-  fetcher?: Fetcher;
-  createResolver?: (fetcher: Fetcher) => GraphQLFieldResolver<any, any>;
   buildSchemaOptions?: BuildSchemaOptions;
+  createResolver?: (fetcher: Fetcher) => GraphQLFieldResolver<any, any>;
+  fetcher?: Fetcher;
+  link?: ApolloLink;
   printSchemaOptions?: PrintSchemaOptions;
+  schema: GraphQLSchema | string;
 }): GraphQLSchema {
+  const { typeDefs, resolvers } = getRemoteTypeDefsAndResolvers({
+    buildSchemaOptions,
+    createResolver,
+    fetcher,
+    link,
+    printSchemaOptions,
+    schema
+  });
+  return makeExecutableSchema({
+    typeDefs,
+    resolvers
+  });
+}
+
+export function getRemoteTypeDefsAndResolvers({
+  buildSchemaOptions,
+  createResolver: customCreateResolver = createResolver,
+  fetcher,
+  link,
+  printSchemaOptions = { commentDescriptions: true },
+  schema
+}: {
+  buildSchemaOptions?: BuildSchemaOptions;
+  createResolver?: (fetcher: Fetcher) => GraphQLFieldResolver<any, any>;
+  fetcher?: Fetcher;
+  link?: ApolloLink;
+  printSchemaOptions?: PrintSchemaOptions;
+  schema: GraphQLSchema | string;
+}): schemaParamsProps {
   if (!fetcher && link) {
     fetcher = linkToFetcher(link);
   }
@@ -124,7 +157,7 @@ export default function makeRemoteExecutableSchema({
   for (const type of types) {
     if (type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType) {
       resolvers[type.name] = {
-        __resolveType(parent, context, info) {
+        __resolveType(parent: any, context: any, info: any) {
           return resolveParentFromTypename(parent, info.schema);
         }
       };
@@ -155,10 +188,10 @@ export default function makeRemoteExecutableSchema({
     }
   }
 
-  return makeExecutableSchema({
+  return {
     typeDefs,
     resolvers
-  });
+  };
 }
 
 export function createResolver(fetcher: Fetcher): GraphQLFieldResolver<any, any> {
